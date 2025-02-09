@@ -19,18 +19,3 @@ class Projectile:
         screen_x = self.pos[0] - camera.x
         screen_y = self.pos[1] - camera.y
         pygame.draw.circle(screen, PROJECTILE_COLOR, (int(screen_x), int(screen_y)), 5)
-
-def create_projectile(pos, velocity):
-    """Creates a new projectile dictionary."""
-    return {
-        "pos": list(pos),
-        "velocity": list(velocity),
-    }
-
-def update_projectiles(projectiles, screen_width, screen_height):
-    """Update projectiles and remove off-screen ones."""
-    for projectile in projectiles[:]:
-        projectile["pos"][0] += projectile["velocity"][0]
-        projectile["pos"][1] += projectile["velocity"][1]
-        if not (0 <= projectile["pos"][0] <= screen_width and 0 <= projectile["pos"][1] <= screen_height):
-            projectiles.remove(projectile)
