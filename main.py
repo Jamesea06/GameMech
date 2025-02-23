@@ -2,6 +2,8 @@ import pygame
 import sys
 from settings import *
 from utils import *
+from projectile import *
+from player import *
 
 # Initialize Pygame
 pygame.init()
@@ -15,6 +17,7 @@ background = pygame.transform.scale(background, (MAP_WIDTH, MAP_HEIGHT))
 projectiles = []  # List to hold active projectiles
 particles = []  # List of active particles
 
+
 # Game loop
 clock = pygame.time.Clock()
 running = True
@@ -24,19 +27,8 @@ while running:
             running = False
 
         # Handle mouse click to shoot projectile
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
-            mouse_pos = pygame.mouse.get_pos()
-            screen_pos = (player.x - camera.x + player.width // 2, player.y - camera.y + player.height // 2)
-            direction = calculate_direction(screen_pos, mouse_pos)
-
-            # Calculate the speed of the projectile, adding the player's velocity
-            projectile_speed_x = direction[0] * PROJECTILE_BASE_SPEED + velocity_x
-            projectile_speed_y = direction[1] * PROJECTILE_BASE_SPEED + velocity_y
-
-            projectiles.append({
-                "pos": [player.x + player.width // 2, player.y + player.height // 2],
-                "velocity": [projectile_speed_x, projectile_speed_y]
-            })
+        projectile_manager = ProjectileManager(player, camera, velocity_x, velocity_y, PROJECTILE_BASE_SPEED, projectiles)
+        projectile_manager.handle_mouse_event(event)
 
     # Check boost input
     keys = pygame.key.get_pressed()
@@ -95,13 +87,11 @@ while running:
     inner_dead_zone.y = camera.y + (SCREEN_HEIGHT - INNER_DEAD_ZONE_HEIGHT) // 2
 
     # Update projectiles
-    for projectile in projectiles[:]:
-        projectile["pos"][0] += projectile["velocity"][0]
-        projectile["pos"][1] += projectile["velocity"][1]
+    for projectile in projectiles:
+        projectile_screen_x = projectile["pos"][0] - camera.x
+        projectile_screen_y = projectile["pos"][1] - camera.y
+        pygame.draw.circle(screen, PROJECTILE_COLOR, (int(projectile_screen_x), int(projectile_screen_y)), 5)
 
-        if (projectile["pos"][0] < 0 or projectile["pos"][0] > MAP_WIDTH or
-                projectile["pos"][1] < 0 or projectile["pos"][1] > MAP_HEIGHT):
-            projectiles.remove(projectile)
 
     # Create particles during boost
     if is_boosting:
@@ -127,12 +117,14 @@ while running:
     player_screen_y = player.y - camera.y
     pygame.draw.rect(screen, PLAYER_COLOR, (player_screen_x, player_screen_y, player.width, player.height))
 
+    projectile_manager.update_projectiles()
     # Draw projectiles
     for projectile in projectiles:
         projectile_screen_x = projectile["pos"][0] - camera.x
         projectile_screen_y = projectile["pos"][1] - camera.y
         pygame.draw.circle(screen, PROJECTILE_COLOR, (int(projectile_screen_x), int(projectile_screen_y)), 5)
-
+    
+    
     # Draw boost meter
     meter_width, meter_height = 20, 200
     meter_x, meter_y = SCREEN_WIDTH - meter_width - 10, 10
